@@ -28,7 +28,7 @@ county_col = 'COUNTYFP20'
 
 # Starting County
 # The number in the county_col of the starting county.
-starting_county = '047'
+starting_county = '049'
 
 # Election Columns
 # These must be formatted as a dictionary of dictionary where the keys in the 

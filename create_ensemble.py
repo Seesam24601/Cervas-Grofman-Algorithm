@@ -23,6 +23,10 @@ assignment_col = 'assignment'
 data = geopandas.read_file(state_file)
 data[assignment_col] = 1
 
+# Add Other Districts
+for district in range(2, district_num + 1):
+    data.loc[:, (assignment_col, district)] = district
+
 # Create Graph
 graph = Graph.from_geodataframe(data)
 
@@ -39,13 +43,15 @@ my_updaters.update({election.name: election for election in elections})
 partition = GeographicPartition(graph, assignment = assignment_col,
     updaters = my_updaters)
 
-partition = create_map(partition, county_col, starting_county, 
-    pop_deviation_max, district_num)
+# Ideal Population
+ideal_population = sum(list(partition["population"].values())) / len(partition)
+
+###
+partition = create_map(partition, county_col, pop_col, starting_county, 
+    pop_deviation_max, district_num, ideal_population)
 
 # Write to CSV
 plan = pandas.DataFrame(partition.graph.data[geoid_col])
-print(plan)
-print(partition.assignment.to_series())
 plan[assignment_col] = partition.assignment.to_series()
 filename = './Ensembles/' + folder + '/test.csv'
 plan.to_csv(filename, index = False)
@@ -55,3 +61,5 @@ vtds = geopandas.read_file(r'C:\Users\charl\Box\Internships\Gerry Chain 2\States
 vtds[assignment_col] = partition.assignment.to_series()
 filename = './Ensembles/' + folder + '/test.shp'
 vtds.to_file(filename, index = False)
+
+print("complete")
