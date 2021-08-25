@@ -54,47 +54,66 @@ def get_county(partition, county_col, pop_col, county, district):
 
     return nodes, population
 
-def new_county(partition, county, district):
+# New County
+# Returns a bordering county that is not yet part of any district by randomly
+# looking through cut edges
+def new_county(partition, county_col, county, district):
     while True:
 
+        # Get a random cut edge
         edge = random.choice(tuple(partition["cut_edges"]))
 
+        # Find the districts and counties of this edge
         edge_districts = (partition.assignment[edge[0]], 
             partition.assignment[edge[1]])
-        edge_counties = (partition.graph.nodes[edge[0]][county_field], 
-            partition.graph.nodes[edge[1]][county_field])
+        edge_counties = (partition.graph.nodes[edge[0]][county_col], 
+            partition.graph.nodes[edge[1]][county_col])
 
+        # Keep if the edge has one node in the current district and one node
+        # that has yet to been assigned
         if edge_districts in [(1, district), (district, 1)]:
 
+            # If the edge has one node in the current county and one node in
+            # another county, return the other county.
             if county == edge_counties[0]:
                 return edge_counties[1]
             elif county == edge_counties[1]:
                 return edge_counties[0]
 
+# Create Map
+# Create a single redistricting plan using the Cervas-Grofman algorithm
 def create_map(partition, county_col, pop_col, starting_county, 
     pop_deviation_max, district_num, ideal_population):
 
+    # Get first county
     county = starting_county
 
+    # Loop through every district except for the last one which will be created 
+    # by the remaining vtds
     for district in range(2, district_num + 1):
 
+        # While the next county chosen is a full county
         population = 0
-
         while True:
 
+            # Get nodes and population of current county
             nodes, county_population = get_county(partition, county_col, pop_col, 
                 county, district)
 
+            # If the population of this county would make the population of the 
+            # district greater than the ideal population, leave the loop
             if county_population > ideal_population - population:
                 break
 
-            partition.assignment.update(nodes)
+            # Otherwise add the county to the district
+            partition = partition.flip(nodes)
             population += county_population
 
-            county = new_county(partition, county, district)
-            print(county)            
+            # Find the next county.
+            county = new_county(partition, county_col, county, district)
 
         return partition
+
 
         
 

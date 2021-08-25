@@ -25,7 +25,7 @@ data[assignment_col] = 1
 
 # Add Other Districts
 for district in range(2, district_num + 1):
-    data.loc[:, (assignment_col, district)] = district
+    data[assignment_col][district] = district
 
 # Create Graph
 graph = Graph.from_geodataframe(data)
@@ -39,9 +39,13 @@ for election in election_cols:
     elections.append(Election(election, election_cols[election]))
 my_updaters.update({election.name: election for election in elections})
 
+# Cut Edges Updater
+my_updaters.update({"cut_edges": updaters.cut_edges})
+
 # Create Initial Partition
 partition = GeographicPartition(graph, assignment = assignment_col,
     updaters = my_updaters)
+
 
 # Ideal Population
 ideal_population = sum(list(partition["population"].values())) / len(partition)
