@@ -11,17 +11,20 @@ This file is used to give the correct file paths to create_ensemble.py
 '''
 
 # SHP file with vtds
-vtd_file  = r'C:\Users\charl\Box\Internships\Gerry Chain 2\States\Pennsylvania\2020 Data\PA_2020_vtds.shp'
+vtd_file  = r'C:\Users\charl\Box\Internships\Gerry Chain 2\States\Pennsylvania\2020 Data Adjusted\WP_VotingDistricts.shp'
 
 # SHP file with counties
-county_file = r'C:\Users\charl\Box\Internships\Gerry Chain 2\States\Pennsylvania\2020 Data\PA_2020_county.shp'
+county_file = r'C:\Users\charl\Box\Internships\Gerry Chain 2\States\Pennsylvania\2020 Data Adjusted\WP_Counties.shp'
+
+# SHP file with municipalities
+muni_file = r'C:\Users\charl\Box\Internships\Gerry Chain 2\States\Pennsylvania\2020 Data Adjusted\WP_Municipalities.shp'
 
 # Destination folder for ensemble. 
 # Must be placed within the Ensembles folder
 folder = 'Testing'
 
 # File name
-filename = "Test_beta_8"
+filename = "muni_1"
 
 # GEOID Column
 geoid_col = 'GEOID20'
@@ -36,15 +39,15 @@ county_col = 'COUNTYFP20'
 # The number in the county_col of the starting county. The population of this 
 # county must be greater than (1 + epsilon) * the ideal population and have
 # more
-starting_county = '089'
+starting_county = '049'
 
 # Epsilon
 # The percentage any given district is allowed to be different from the ideal
 # population. Note that this does not apply to the final district.
-epsilon = 0.2
+epsilon = 0.05
 
 # Number of Districtsx`
-district_num = 50
+district_num = 10
 
 # Number of Tries
 # How many times the program will try to split a county before it assumes that

@@ -15,7 +15,6 @@ instructions made in the dictionary, with county splits performed using ReCom.
 from gerrychain.proposals import recom_frack
 from networkx import number_connected_components
 from reusable_data import get_intersections
-from write_partition import write_to_csv
 
 # split_counties
 # Partition a state based on the county_assignments dictionary splitting 
@@ -101,8 +100,6 @@ def split_counties(partition, county_col, pop_col, county_assignments, epsilon,
                     break
 
                 if tries >= max_tries:
-                    write_to_csv(proposed_partition, "GEOID20", "assignment", 
-                        "Testing", "Test_Beta_6X")
                     return False, None
                     
     return True, partition

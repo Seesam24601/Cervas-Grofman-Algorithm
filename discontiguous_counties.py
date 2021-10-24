@@ -11,6 +11,8 @@ This file adds a single edge so that all counties in PA are contiguous. The same
 approach can be used to correct counties in other states if necessary
 '''
 
+from networkx import number_connected_components
+
 # find_node_by_geoid
 # Return the node in the graph with the given GEOID
 def find_node_by_geoid(graph, geoid_col, geoid):
@@ -27,3 +29,6 @@ def correct_PA(graph, geoid_col, assignment_col):
     graph.add_edge(node1, node2)
     
     return graph
+
+def check_contiguity(graph, ):
+    pass

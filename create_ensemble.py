@@ -26,6 +26,7 @@ exec(open("input_template.py").read())
 # Add Blank Assignment
 assignment_col = 'assignment'
 data_county = geopandas.read_file(county_file)
+data_muni = geopandas.read_file(muni_file)
 data_vtd = geopandas.read_file(vtd_file)
 
 # Add Districts to data_county
