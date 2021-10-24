@@ -128,6 +128,8 @@ def reusable_data(county_graph, vtd_graph, county_col, pop_col):
     county_to_id = get_county_to_id(county_graph, county_col)
     id_to_county = get_id_to_county(county_to_id)
 
+    print(id_to_county)
+
     border_counties = bordering_counties(county_graph, county_col, id_to_county)
 
     border_edges = border_county_edges(vtd_graph, county_col)

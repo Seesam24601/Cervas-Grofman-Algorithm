@@ -11,7 +11,7 @@ This file creates an ensemble of redistricting plans with n-1 county splits by
 applying the Cervas-Groffman Algorithm.
 '''
 
-from discontiguous_counties import correct_PA
+from discontiguous_counties import correct_PA, check_contiguity
 import geopandas
 from gerrychain import Election, GeographicPartition, Graph, updaters
 from partition_counties import partition_counties
@@ -82,18 +82,19 @@ county_to_id, id_to_county, county_list, border_counties, border_edges, \
     county_populations, county_subgraphs  = reusable_data(county_graph, 
     vtd_graph, county_col, pop_col)
 
+print("ARGO")
+
 # Create Map
 t0_all = t0 = time.time()
 for i in range(runs):
 
-    count = 0
     while True:
         county_assignments = partition_counties(county_partition, county_col, 
             pop_col, starting_county, flipped_counties, epsilon, district_num, 
             ideal_population, county_to_id, id_to_county, county_populations,
             county_list)
         
-        count += 1
+        print("d")
 
         validity, proposed_partition = split_counties(vtd_partition, county_col, 
             pop_col, county_assignments, epsilon, border_counties,

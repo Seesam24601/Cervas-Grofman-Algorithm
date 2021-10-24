@@ -11,29 +11,32 @@ This file is used to give the correct file paths to create_ensemble.py
 '''
 
 # SHP file with vtds
-vtd_file  = r'C:\Users\charl\Box\Internships\Gerry Chain 2\States\Pennsylvania\2020 Data Adjusted\WP_VotingDistricts.shp'
+vtd_file  = r'C:\Users\charl\Box\Internships\Gerry Chain 2\States\Pennsylvania\2020 Data Algo\PA_2020_vtds.shp'
 
 # SHP file with counties
-county_file = r'C:\Users\charl\Box\Internships\Gerry Chain 2\States\Pennsylvania\2020 Data Adjusted\WP_Counties.shp'
+county_file = r'C:\Users\charl\Box\Internships\Gerry Chain 2\States\Pennsylvania\2020 Data Algo\PA_2020_counties.shp'
 
 # SHP file with municipalities
-muni_file = r'C:\Users\charl\Box\Internships\Gerry Chain 2\States\Pennsylvania\2020 Data Adjusted\WP_Municipalities.shp'
+muni_file = r'C:\Users\charl\Box\Internships\Gerry Chain 2\States\Pennsylvania\2020 Data Algo\PA_2020_muni.shp'
 
 # Destination folder for ensemble. 
 # Must be placed within the Ensembles folder
 folder = 'Testing'
 
 # File name
-filename = "muni_1"
+filename = "muni_2"
 
 # GEOID Column
 geoid_col = 'GEOID20'
 
 # Population Column
-pop_col = 'POP100'
+pop_col = 'P0010001'
 
 # County Column
-county_col = 'COUNTYFP20'
+county_col = 'FIPS'
+
+# Municipality Column
+muni_col = "MUNI"
 
 # Starting County
 # The number in the county_col of the starting county. The population of this 

@@ -40,6 +40,8 @@ def partition_counties(partition, county_col, pop_col, starting_county,
         validity, county_assignments = attempt_county_partition(partition, 
             county_col, pop_col, starting_county, epsilon, district_num, 
             ideal_population, county_to_id, id_to_county, county_populations)
+            
+        print(county_assignments)
 
         # If the dictionary is valid, return the dictionary
         if validity:

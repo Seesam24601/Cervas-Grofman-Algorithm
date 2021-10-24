@@ -12,6 +12,7 @@ approach can be used to correct counties in other states if necessary
 '''
 
 from networkx import number_connected_components
+from reusable_data import get_subgraph
 
 # find_node_by_geoid
 # Return the node in the graph with the given GEOID
@@ -30,5 +31,17 @@ def correct_PA(graph, geoid_col, assignment_col):
     
     return graph
 
-def check_contiguity(graph, ):
-    pass
+def check_contiguity(graph, data_layer, data_col):
+
+    # Get list of every possible item in the data_layer
+    data_list = list(data_layer[data_col])
+
+    # Find the subgraphs of the each item in the graph and check whether or not 
+    # they are connected
+    connected_components = []
+    for item in data_list:
+        subgraph = get_subgraph(graph, data_col, item)
+        connected_components.append(number_connected_components(subgraph))
+
+    print(connected_components)
+
