@@ -11,7 +11,7 @@ This file creates an ensemble of redistricting plans with n-1 county splits by
 applying the Cervas-Groffman Algorithm.
 '''
 
-from discontiguous_counties import correct_PA, check_contiguity
+from discontiguous_counties import correct_PA, check_contiguity, muni_over_county
 import geopandas
 from gerrychain import Election, GeographicPartition, Graph, updaters
 from partition_counties import partition_counties
@@ -56,11 +56,19 @@ if district != district_num + 1:
 
 # Create Graphs
 county_graph = Graph.from_geodataframe(data_county)
+muni_graph = Graph.from_geodataframe(data_muni)
 vtd_graph = Graph.from_geodataframe(data_vtd)
+
+muni_over_county(muni_graph, muni_col, name_col)
 
 # Make sure that the precincts of every county are contiguous. This line is 
 # specific to PA
 vtd_graph = correct_PA(vtd_graph, geoid_col, assignment_col)
+
+# Verify that municipalities and counties are made out contiguous districts
+check_contiguity(vtd_graph, data_county, county_col, name_col)
+check_contiguity(vtd_graph, data_muni, muni_col, name_col)
+check_contiguity(muni_graph, data_county, county_col, name_col)
 
 # Population Updater
 my_updaters = {"population": updaters.Tally(pop_col, alias = "population")}
@@ -78,9 +86,11 @@ vtd_partition = GeographicPartition(vtd_graph, assignment = assignment_col,
 ideal_population = int(sum(list(county_partition["population"].values())) 
     / len(county_partition))
 
-county_to_id, id_to_county, county_list, border_counties, border_edges, \
-    county_populations, county_subgraphs  = reusable_data(county_graph, 
-    vtd_graph, county_col, pop_col)
+# Get Reusable Data
+county_to_id, id_to_county, muni_to_id, id_to_muni, border_muni, \
+    border_edges, county_populations, counties, muni_populations, muni, \
+    county_subgraphs, muni_subgraphs = reusable_data(county_graph, muni_graph, 
+    vtd_graph, county_col, muni_col, pop_col)
 
 print("ARGO")
 
@@ -95,10 +105,11 @@ for i in range(runs):
             county_list)
         
         print("d")
+        input()
 
-        validity, proposed_partition = split_counties(vtd_partition, county_col, 
-            pop_col, county_assignments, epsilon, border_counties,
-            border_edges, county_populations, county_subgraphs, max_tries)
+        validity, proposed_partition = split_counties(vtd_partition, muni_col, 
+            pop_col, muni_assignments, epsilon, border_munis,
+            border_edges, muni_populations, muni_subgraphs, max_tries)
         if validity:
             break
 

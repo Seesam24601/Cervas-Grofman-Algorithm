@@ -123,23 +123,31 @@ def get_county_subgraphs(partition, counties, county_col):
 
 # resuable_data
 # Collects and returns all of the reusable data structures from this file
-def reusable_data(county_graph, vtd_graph, county_col, pop_col):
+def reusable_data(county_graph, muni_graph, vtd_graph, county_col, muni_col,
+    pop_col):
     
     county_to_id = get_county_to_id(county_graph, county_col)
     id_to_county = get_id_to_county(county_to_id)
 
-    print(id_to_county)
+    muni_to_id = get_county_to_id(muni_graph, muni_col)
+    id_to_muni = get_id_to_county(muni_to_id)
 
-    border_counties = bordering_counties(county_graph, county_col, id_to_county)
+    border_muni = bordering_counties(muni_graph, muni_col, id_to_muni)
 
-    border_edges = border_county_edges(vtd_graph, county_col)
+    border_edges = border_county_edges(vtd_graph, muni_col)
 
     county_populations = get_county_populations(county_graph, id_to_county, 
         pop_col)
-
     counties = list(county_populations.keys())
 
-    county_subgraphs = get_county_subgraphs(vtd_graph, counties, county_col)
+    muni_populations = get_county_populations(muni_graph, id_to_muni, 
+        pop_col)
+    muni = list(muni_populations.keys())
 
-    return (county_to_id, id_to_county, counties, border_counties, border_edges, 
-        county_populations, county_subgraphs)
+    county_subgraphs = get_county_subgraphs(muni_graph, counties, county_col)
+
+    muni_subgraphs = get_county_subgraphs(vtd_graph, munis, muni_col)
+
+    return (county_to_id, id_to_county, muni_to_id, id_to_muni, border_muni, 
+        border_edges, county_populations, counties, muni_populations, muni, 
+        county_subgraphs, muni_subgraphs)

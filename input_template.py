@@ -38,6 +38,9 @@ county_col = 'FIPS'
 # Municipality Column
 muni_col = "MUNI"
 
+# Name Column
+name_col = "NAME"
+
 # Starting County
 # The number in the county_col of the starting county. The population of this 
 # county must be greater than (1 + epsilon) * the ideal population and have

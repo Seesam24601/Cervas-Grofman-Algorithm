@@ -31,17 +31,53 @@ def correct_PA(graph, geoid_col, assignment_col):
     
     return graph
 
-def check_contiguity(graph, data_layer, data_col):
+# check_contigutity
+# Prints a warning if the given graph is discontiguous with respect to the given
+# data layer and list the discontiguous ids.
+def check_contiguity(graph, data_layer, data_col, name_col):
 
-    # Get list of every possible item in the data_layer
+    # Get list of every possible item and its name in the data_layer
     data_list = list(data_layer[data_col])
+    name_list = list(data_layer[name_col])
 
     # Find the subgraphs of the each item in the graph and check whether or not 
     # they are connected
     connected_components = []
     for item in data_list:
-        subgraph = get_subgraph(graph, data_col, item)
+        subgraph = graph.subgraph(get_subgraph(graph, data_col, item))
         connected_components.append(number_connected_components(subgraph))
 
-    print(connected_components)
+    # Print warning if necessary
+    if max(connected_components) != 1:
+        print("WARNING: A graph is discontiguous for a data layer")
 
+        # Print a list of the discontiguous items
+        print("The following IDs are discontiguous: ")
+        for i in range(len(connected_components)):
+            if connected_components[i] != 1:
+                print(name_list[i])
+        print()
+
+# muni_over_county
+# 
+def muni_over_county(graph, muni_col, name_col):
+    muni_used = dict()
+    muni_dupl = set()
+
+    # Loop through all of the municipalities and if the same municipality is
+    # found a second time make note.
+    for i in range(len(graph.nodes())):
+        muni_id = graph.nodes()[i][muni_col]
+        if muni_id in muni_used:
+            muni_dupl.add(muni_id)
+        else:
+            muni_used[muni_id] = i
+
+    # Print warning if necesary
+    if len(muni_dupl) != 0:
+        print("WARNING: A municipality has separate nodes in two counties with the same id")
+
+        # Print the offending municipalities
+        for node in muni_dupl:
+            print(graph.nodes()[muni_used[node]][name_col])
+        print()
