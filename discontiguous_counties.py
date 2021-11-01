@@ -59,7 +59,9 @@ def check_contiguity(graph, data_layer, data_col, name_col):
         print()
 
 # muni_over_county
-# 
+# Prints a warning and the offending municipalities' names if there is any
+# municipality nodes that share the same ID. Typically this means that the 
+# municipality is split between two counties.
 def muni_over_county(graph, muni_col, name_col):
     muni_used = dict()
     muni_dupl = set()

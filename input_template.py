@@ -11,15 +11,15 @@ This file is used to give the correct file paths to create_ensemble.py
 '''
 
 # SHP file with vtds
-vtd_file  = r'C:\Users\charl\Box\Internships\Gerry Chain 2\States\Pennsylvania\2020 Data Algo\PA_2020_vtds.shp'
+vtd_file  = r'C:\Users\charl\Box\Internships\Gerry Chain 2\States\Pennsylvania\2021 Data Set 2 Edited\PA_2020_vtds.shp'
 
 # SHP file with counties
-county_file = r'C:\Users\charl\Box\Internships\Gerry Chain 2\States\Pennsylvania\2020 Data Algo\PA_2020_counties.shp'
+county_file = r'C:\Users\charl\Box\Internships\Gerry Chain 2\States\Pennsylvania\2021 Data Set 2 Edited\PA_2020_counties.shp'
 
 # SHP file with municipalities
-muni_file = r'C:\Users\charl\Box\Internships\Gerry Chain 2\States\Pennsylvania\2020 Data Algo\PA_2020_muni.shp'
+muni_file = r'C:\Users\charl\Box\Internships\Gerry Chain 2\States\Pennsylvania\2021 Data Set 2 Edited\PA_2020_muni.shp'
 
-# Destination folder for ensemble. 
+# Destination folder for ensemble.  
 # Must be placed within the Ensembles folder
 folder = 'Testing'
 

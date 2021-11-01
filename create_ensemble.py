@@ -15,6 +15,8 @@ from discontiguous_counties import correct_PA, check_contiguity, muni_over_count
 import geopandas
 from gerrychain import Election, GeographicPartition, Graph, updaters
 from partition_counties import partition_counties
+from partition_functions import add_districts
+from partition_municipalities import partition_municipalities
 from reusable_data import reusable_data
 from split_counties import split_counties
 from write_partition import write_to_csv
@@ -30,15 +32,12 @@ data_muni = geopandas.read_file(muni_file)
 data_vtd = geopandas.read_file(vtd_file)
 
 # Add Districts to data_county
-data_county[assignment_col] = 1
-district = 2
-flipped_counties = set()
-for i in range(len(data_county[assignment_col])):
-    flipped_counties.add(data_county[county_col][i])
-    data_county[assignment_col][i] = district
-    district += 1
-    if district > district_num:
-        break
+data_county, flipped_counties = add_districts(data_county, assignment_col,
+    county_col, district_num)
+
+# Add Districts to data_muni
+data_muni, flipped_munis = add_districts(data_muni, assignment_col, muni_col,
+    district_num)
 
 # Add Districts to data_vtd
 data_vtd[assignment_col] = 1
@@ -59,8 +58,6 @@ county_graph = Graph.from_geodataframe(data_county)
 muni_graph = Graph.from_geodataframe(data_muni)
 vtd_graph = Graph.from_geodataframe(data_vtd)
 
-muni_over_county(muni_graph, muni_col, name_col)
-
 # Make sure that the precincts of every county are contiguous. This line is 
 # specific to PA
 vtd_graph = correct_PA(vtd_graph, geoid_col, assignment_col)
@@ -69,6 +66,7 @@ vtd_graph = correct_PA(vtd_graph, geoid_col, assignment_col)
 check_contiguity(vtd_graph, data_county, county_col, name_col)
 check_contiguity(vtd_graph, data_muni, muni_col, name_col)
 check_contiguity(muni_graph, data_county, county_col, name_col)
+muni_over_county(muni_graph, muni_col, name_col)
 
 # Population Updater
 my_updaters = {"population": updaters.Tally(pop_col, alias = "population")}
@@ -79,6 +77,8 @@ my_updaters.update({"cut_edges": updaters.cut_edges})
 # Create Initial Partitions
 county_partition = GeographicPartition(county_graph, assignment = assignment_col,
     updaters = my_updaters)
+muni_partition = GeographicPartition(muni_graph, assignment = assignment_col,
+    updaters = my_updaters)
 vtd_partition = GeographicPartition(vtd_graph, assignment = assignment_col,
     updaters = my_updaters)
 
@@ -88,9 +88,10 @@ ideal_population = int(sum(list(county_partition["population"].values()))
 
 # Get Reusable Data
 county_to_id, id_to_county, muni_to_id, id_to_muni, border_muni, \
-    border_edges, county_populations, counties, muni_populations, muni, \
-    county_subgraphs, muni_subgraphs = reusable_data(county_graph, muni_graph, 
-    vtd_graph, county_col, muni_col, pop_col)
+    border_edges, border_nodes, county_populations, counties, \
+    muni_populations, munis, county_subgraphs, muni_subgraphs = \
+    reusable_data(county_graph, muni_graph, vtd_graph, county_col, muni_col, 
+    pop_col)
 
 print("ARGO")
 
@@ -102,15 +103,35 @@ for i in range(runs):
         county_assignments = partition_counties(county_partition, county_col, 
             pop_col, starting_county, flipped_counties, epsilon, district_num, 
             ideal_population, county_to_id, id_to_county, county_populations,
-            county_list)
-        
-        print("d")
-        input()
+            counties)
 
-        validity, proposed_partition = split_counties(vtd_partition, muni_col, 
-            pop_col, muni_assignments, epsilon, border_munis,
-            border_edges, muni_populations, muni_subgraphs, max_tries)
-        if validity:
+        print(county_assignments)
+
+        solution = False
+        for i in range(max_tries):
+
+            validity, muni_assignments = partition_municipalities(muni_partition,
+                muni_col, pop_col, epsilon, county_assignments, muni_to_id,
+                id_to_muni, muni_populations, munis, county_subgraphs, border_nodes,
+                flipped_munis, max_tries, county_col)
+
+            print(muni_assignments)
+            print(len(muni_assignments))
+            print(validity)
+            input()
+
+            if not validity:
+                continue
+
+            validity, proposed_partition = split_counties(vtd_partition, muni_col, 
+                pop_col, muni_assignments, epsilon, border_muni,
+                border_edges, muni_populations, muni_subgraphs, max_tries)
+            input()
+            if validity:
+                solution = True
+                break
+
+        if solution:
             break
 
     # Write to CSV

@@ -14,6 +14,7 @@ instructions made in the dictionary, with county splits performed using ReCom.
 
 from gerrychain.proposals import recom_frack
 from networkx import number_connected_components
+from partition_functions import get_county_nodes
 from reusable_data import get_intersections
 
 # split_counties
@@ -50,6 +51,8 @@ def split_counties(partition, county_col, pop_col, county_assignments, epsilon,
 
         county_length = len(county_assignments[county])
         if county_length > 1 or count == length - 1:
+
+            print(county)
 
             subgraph = county_subgraphs[county]
 
@@ -103,17 +106,6 @@ def split_counties(partition, county_col, pop_col, county_assignments, epsilon,
                     return False, None
                     
     return True, partition
-
-# Get County nodes
-# Returns all of the nodes in a particular county
-def get_county_nodes(subgraph, district):
-    
-    nodes = dict()
-
-    for x in subgraph:
-        nodes[x] = district
-
-    return nodes
 
 # get_subgraph_district
 # Return the collection of nodes within a county that are in a given district.

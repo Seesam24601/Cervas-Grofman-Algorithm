@@ -121,6 +121,33 @@ def get_county_subgraphs(partition, counties, county_col):
 
     return subgraphs
 
+# get_border_nodes
+# Create a dictionary mapping counties to municipalities on the border of said 
+# counties
+def get_border_nodes(graph, county_col):
+    dictionary = dict()
+
+    # Loop through the edges of the graph
+    for edge in graph.edges():
+        edge_counties = (graph.nodes()[edge[0]][county_col],
+            graph.nodes()[edge[1]][county_col])
+
+        # Only add edges that reach across a county border.
+        if edge_counties[0] != edge_counties[1]:
+            for i in range(0,2):
+                if edge_counties[i] in dictionary:
+                    dictionary[edge_counties[i]].add(edge[i])
+                else:
+                    S = set()
+                    S.add(edge[i])
+                    dictionary[edge_counties[i]] = S
+
+    # Convert to list to improve effiiency when making random calls
+    for county in dictionary:
+        dictionary[county] = list(dictionary[county])
+
+    return dictionary
+
 # resuable_data
 # Collects and returns all of the reusable data structures from this file
 def reusable_data(county_graph, muni_graph, vtd_graph, county_col, muni_col,
@@ -136,18 +163,20 @@ def reusable_data(county_graph, muni_graph, vtd_graph, county_col, muni_col,
 
     border_edges = border_county_edges(vtd_graph, muni_col)
 
+    border_nodes = get_border_nodes(muni_graph, county_col)
+
     county_populations = get_county_populations(county_graph, id_to_county, 
         pop_col)
     counties = list(county_populations.keys())
 
     muni_populations = get_county_populations(muni_graph, id_to_muni, 
         pop_col)
-    muni = list(muni_populations.keys())
+    munis = list(muni_populations.keys())
 
     county_subgraphs = get_county_subgraphs(muni_graph, counties, county_col)
 
     muni_subgraphs = get_county_subgraphs(vtd_graph, munis, muni_col)
 
     return (county_to_id, id_to_county, muni_to_id, id_to_muni, border_muni, 
-        border_edges, county_populations, counties, muni_populations, muni, 
-        county_subgraphs, muni_subgraphs)
+        border_edges, border_nodes, county_populations, counties, 
+        muni_populations, munis, county_subgraphs, muni_subgraphs)

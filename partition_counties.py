@@ -21,8 +21,9 @@ the node object associated with that county in the graph.
 '''
 
 from copy import deepcopy
+from partition_functions import (check_population, add_to_assignment,
+    check_contiguous)
 import random
-from networkx import number_connected_components
 
 # partition_counties
 # Continue to try to create valid county assignment dictionaries and return 
@@ -40,8 +41,6 @@ def partition_counties(partition, county_col, pop_col, starting_county,
         validity, county_assignments = attempt_county_partition(partition, 
             county_col, pop_col, starting_county, epsilon, district_num, 
             ideal_population, county_to_id, id_to_county, county_populations)
-            
-        print(county_assignments)
 
         # If the dictionary is valid, return the dictionary
         if validity:
@@ -195,71 +194,6 @@ def add_county(partition, county, county_to_id, counties, county_assignments,
     return (partition, counties, county_assignments, district, population,
         pieces)
 
-# get_next_county
-# Returns the name of an unused county that borders the current district. If 
-# unused counties exist that border two or more counties already in the district
-# then one of them will be chosen
-def get_next_county(partition, counties, county_to_id, id_to_county, district):
-
-    # Create empty dictionaries for counties that border the district
-    bordering_counties = dict()
-   
-    # Loop through the cut edges
-    for edge in partition["cut_edges"]:
-
-        # Create a tuple of the districts and counties on each side of each 
-        # cut edge
-        edge_districts = (partition.assignment[edge[0]], 
-            partition.assignment[edge[1]])
-        edge_counties = (edge[0], edge[1])
-
-        # Keep if the edge has one node in the current district and one node
-        # that has yet to been assigned
-        if edge_districts in [(1, district), (district, 1)]:
-
-            # If a cut edge exists between a county in the district and an
-            # unused county, add the id of the unused county to the bordering
-            # county dictionary
-            for i in range(0, 2):
-                if edge_counties[i] in counties:
-                    if edge_counties[i - 1] not in bordering_counties:
-                        bordering_counties[edge_counties[i - 1]] = \
-                            [edge_counties[i]]
-                    else:
-                        bordering_counties[edge_counties[i - 1]].append(
-                                edge_counties[i])
-                    break
-
-    return bordering_counties
-
-# check_contiguous
-# Return true if no districts are split between multiple discontiguous parts
-def check_contiguous(partition, pieces):
-
-    # Count the number of connected components
-    current_pieces = 0
-    for part, subgraph in partition.subgraphs.items():
-        current_pieces += number_connected_components(subgraph)
-
-    # Make sure the number of connected components is equal to the number of
-    # districts
-    return current_pieces == pieces
-
-# check_population
-# Return true if the population is within epsilon of the ideal population
-def check_population(population, ideal_population, epsilon):
-    return ((population <= (ideal_population * (1 + epsilon))) 
-        and (population >= (ideal_population * (1 - epsilon))))
-
-# add_to_assignment
-# Safely adds a value to a dictionary regardless of whether or not the key is
-# already present
-def add_to_assignment(county_assignments, county, district, population):
-    if county not in county_assignments:
-        county_assignments[county] = [(district, population)]
-    else:
-        county_assignments[county].append((district, population))
-
 # single_county_districts
 # Add as many districts as possible where the district is fully contained within
 # a county
@@ -327,3 +261,40 @@ def clean_assignment(county_assignments, partition, county_col, pop_col,
         # If the county is fully in district 1
         else:
             county_assignments[county] = [(1, county_populations[county])]
+
+# get_next_county
+# Returns the name of an unused county that borders the current district. If 
+# unused counties exist that border two or more counties already in the district
+# then one of them will be chosen
+def get_next_county(partition, counties, county_to_id, id_to_county, district):
+
+    # Create empty dictionaries for counties that border the district
+    bordering_counties = dict()
+   
+    # Loop through the cut edges
+    for edge in partition["cut_edges"]:
+
+        # Create a tuple of the districts and counties on each side of each 
+        # cut edge
+        edge_districts = (partition.assignment[edge[0]], 
+            partition.assignment[edge[1]])
+        edge_counties = (edge[0], edge[1])
+
+        # Keep if the edge has one node in the current district and one node
+        # that has yet to been assigned
+        if edge_districts in [(1, district), (district, 1)]:
+
+            # If a cut edge exists between a county in the district and an
+            # unused county, add the id of the unused county to the bordering
+            # county dictionary
+            for i in range(0, 2):
+                if edge_counties[i] in counties:
+                    if edge_counties[i - 1] not in bordering_counties:
+                        bordering_counties[edge_counties[i - 1]] = \
+                            [edge_counties[i]]
+                    else:
+                        bordering_counties[edge_counties[i - 1]].append(
+                                edge_counties[i])
+                    break
+
+    return bordering_counties
