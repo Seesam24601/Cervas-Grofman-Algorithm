@@ -14,8 +14,9 @@ instructions made in the dictionary, with county splits performed using ReCom.
 
 from gerrychain.proposals import recom_frack
 from networkx import number_connected_components
-from partition_functions import get_county_nodes
+from partition_functions import get_county_nodes, check_borders
 from reusable_data import get_intersections
+from write_partition import write_to_csv
 
 # split_counties
 # Partition a state based on the county_assignments dictionary splitting 
@@ -44,6 +45,9 @@ def split_counties(partition, county_col, pop_col, county_assignments, epsilon,
             district = county_assignments[county][0][0]
             nodes = get_county_nodes(county_subgraphs[county], district)
             partition = partition.flip(nodes)
+
+    write_to_csv(partition, "GEOID20", "assignment", "Testing", 
+        "muni_3X")
 
     # Loop through the counties again, this time dealing only with counties
     # that need to be split.
@@ -119,41 +123,6 @@ def get_subgraph_district(partition, subgraph, district):
     subgraph = partition.graph.subgraph(county_subgraph)
     return subgraph
 
-# check_borders
-# For a given county and bordering county, check that there exists an edge in 
-# where the node in the county is of the given district
-def check_borders(partition, border_edges, county_col, district, county,
-    border_county, counties):
-
-    # Find the edges between the county and border county from the border_county
-    # dictionary
-    if (county, border_county) in border_edges:
-        edges = border_edges[(county, border_county)]
-    else:
-        edges = border_edges[(border_county, county)]
-
-    # Loop through the edges
-    for edge in edges:
-        edge_districts = (partition.assignment[edge[0]], 
-            partition.assignment[edge[1]])
-        edge_counties = (partition.graph.nodes()[edge[0]][county_col],
-            partition.graph.nodes()[edge[1]][county_col])
-
-        # Check to see if one of the edges meets the criteria
-        for i in range(2):
-            if (edge_counties[i] == county and
-                edge_districts[i] == district):
-
-                # If the border_county has already been partitioned, check that
-                # the edge is the district on both sides
-                if border_county in counties:
-                    if edge_districts[i - 1] == district:
-                        return True
-                else:
-                    return True
-
-    return False
-
 # check_all_borders
 # Check that all borders within a given county meet the requirements in 
 # county_assignments such that a valid partition of the entire map is possible
@@ -179,4 +148,4 @@ def check_all_borders(partition, border_edges, county_col, county,
                                     counties):
                                         return False
 
-    return True
+    return True 

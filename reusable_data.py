@@ -161,7 +161,11 @@ def reusable_data(county_graph, muni_graph, vtd_graph, county_col, muni_col,
 
     border_muni = bordering_counties(muni_graph, muni_col, id_to_muni)
 
+    border_county = bordering_counties(county_graph, county_col, id_to_county)
+
     border_edges = border_county_edges(vtd_graph, muni_col)
+
+    border_edges_county = border_county_edges(muni_graph, county_col)
 
     border_nodes = get_border_nodes(muni_graph, county_col)
 
@@ -178,5 +182,6 @@ def reusable_data(county_graph, muni_graph, vtd_graph, county_col, muni_col,
     muni_subgraphs = get_county_subgraphs(vtd_graph, munis, muni_col)
 
     return (county_to_id, id_to_county, muni_to_id, id_to_muni, border_muni, 
-        border_edges, border_nodes, county_populations, counties, 
-        muni_populations, munis, county_subgraphs, muni_subgraphs)
+        border_county, border_edges, border_nodes, county_populations, counties, 
+        muni_populations, munis, county_subgraphs, muni_subgraphs, 
+        border_edges_county)

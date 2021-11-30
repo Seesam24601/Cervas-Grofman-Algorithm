@@ -1,3 +1,5 @@
 !/Ensebmles
 /Ensembles/*
 __pycache__/
+
+*.dump

@@ -11,62 +11,39 @@ This file creates an ensemble of redistricting plans with n-1 county splits by
 applying the Cervas-Groffman Algorithm.
 '''
 
-from discontiguous_counties import correct_PA, check_contiguity, muni_over_county
+"""
+Border munis is adding duplicate municiplaities? 
+What prevents this for counties?
+How to fix?
+"""
+
+from discontiguous_counties import (correct_PA, check_contiguity, 
+    muni_over_county, check_donuts)
 import geopandas
 from gerrychain import Election, GeographicPartition, Graph, updaters
 from partition_counties import partition_counties
 from partition_functions import add_districts
 from partition_municipalities import partition_municipalities
+import pickle
 from reusable_data import reusable_data
 from split_counties import split_counties
-from write_partition import write_to_csv
+from write_partition import write_to_csv, write_to_shapefile
 import time
 
 # Input Values
 exec(open("input_template.py").read())
 
-# Add Blank Assignment
-assignment_col = 'assignment'
-data_county = geopandas.read_file(county_file)
-data_muni = geopandas.read_file(muni_file)
-data_vtd = geopandas.read_file(vtd_file)
+# Generate graphs if necessary
+if new_graphs:
+    exec(open("pickle_graph.py").read())
 
-# Add Districts to data_county
-data_county, flipped_counties = add_districts(data_county, assignment_col,
-    county_col, district_num)
-
-# Add Districts to data_muni
-data_muni, flipped_munis = add_districts(data_muni, assignment_col, muni_col,
-    district_num)
-
-# Add Districts to data_vtd
-data_vtd[assignment_col] = 1
-district = 2
-for i in range(len(data_vtd[assignment_col])):
-    if data_vtd[county_col][i] == starting_county:
-        data_vtd[assignment_col][i] = district
-        district += 1
-        if district > district_num:
-            break
-
-# Make sure that all the districts were added
-if district != district_num + 1:
-    print("WARNING: Starting county did not contain enough precincts")
-
-# Create Graphs
-county_graph = Graph.from_geodataframe(data_county)
-muni_graph = Graph.from_geodataframe(data_muni)
-vtd_graph = Graph.from_geodataframe(data_vtd)
-
-# Make sure that the precincts of every county are contiguous. This line is 
-# specific to PA
-vtd_graph = correct_PA(vtd_graph, geoid_col, assignment_col)
-
-# Verify that municipalities and counties are made out contiguous districts
-check_contiguity(vtd_graph, data_county, county_col, name_col)
-check_contiguity(vtd_graph, data_muni, muni_col, name_col)
-check_contiguity(muni_graph, data_county, county_col, name_col)
-muni_over_county(muni_graph, muni_col, name_col)
+# Otherwise, Load graphs and flipped entitites
+else:
+    county_graph = pickle.load(open(county_graph_dump, "rb"))
+    muni_graph = pickle.load(open(muni_graph_dump, "rb"))
+    vtd_graph = pickle.load(open(vtd_graph_dump, "rb"))
+    flipped_counties = pickle.load(open(flipped_counties_dump, "rb"))
+    flipped_munis = pickle.load(open(flipped_munis_dump, "rb"))
 
 # Population Updater
 my_updaters = {"population": updaters.Tally(pop_col, alias = "population")}
@@ -79,19 +56,26 @@ county_partition = GeographicPartition(county_graph, assignment = assignment_col
     updaters = my_updaters)
 muni_partition = GeographicPartition(muni_graph, assignment = assignment_col,
     updaters = my_updaters)
+test_p = muni_partition
 vtd_partition = GeographicPartition(vtd_graph, assignment = assignment_col,
     updaters = my_updaters)
+
+partition_by_counties = GeographicPartition(muni_graph, 
+    assignment = county_col, updaters = my_updaters)
 
 # Ideal Population
 ideal_population = int(sum(list(county_partition["population"].values())) 
     / len(county_partition))
 
 # Get Reusable Data
-county_to_id, id_to_county, muni_to_id, id_to_muni, border_muni, \
+county_to_id, id_to_county, muni_to_id, id_to_muni, border_muni, border_county, \
     border_edges, border_nodes, county_populations, counties, \
-    muni_populations, munis, county_subgraphs, muni_subgraphs = \
+    muni_populations, munis, county_subgraphs, muni_subgraphs, border_edges_county = \
     reusable_data(county_graph, muni_graph, vtd_graph, county_col, muni_col, 
     pop_col)
+
+donuts_muni = check_donuts(muni_graph, counties, county_subgraphs, 
+    assignment_col)
 
 print("ARGO")
 
@@ -104,35 +88,53 @@ for i in range(runs):
             pop_col, starting_county, flipped_counties, epsilon, district_num, 
             ideal_population, county_to_id, id_to_county, county_populations,
             counties)
+      
 
-        print(county_assignments)
+        validity, muni_assignments = partition_municipalities(muni_partition,
+            muni_col, pop_col, epsilon, county_assignments, muni_to_id,
+            id_to_muni, muni_populations, munis, county_subgraphs, border_nodes,
+            flipped_munis, max_tries, county_col, border_county, donuts_muni,
+            assignment_col, muni_graph, partition_by_counties, 
+            border_edges_county, counties)
 
-        solution = False
-        for i in range(max_tries):
+        if not validity:
+            continue
 
-            validity, muni_assignments = partition_municipalities(muni_partition,
-                muni_col, pop_col, epsilon, county_assignments, muni_to_id,
-                id_to_muni, muni_populations, munis, county_subgraphs, border_nodes,
-                flipped_munis, max_tries, county_col)
+        print(muni_assignments)
+        print(len(muni_assignments))
+        print(validity)
 
-            print(muni_assignments)
-            print(len(muni_assignments))
-            print(validity)
-            input()
+        t1 = time.time()
+        print(t1 - t0)
+        print()
 
-            if not validity:
-                continue
+        for muni in muni_assignments:
+            if len(muni_assignments[muni]) == 1:
+                test_p = test_p.flip({muni_to_id[muni] : muni_assignments[muni][0][0]})
+            else:
+                print(muni)
+        print()
 
-            validity, proposed_partition = split_counties(vtd_partition, muni_col, 
-                pop_col, muni_assignments, epsilon, border_muni,
-                border_edges, muni_populations, muni_subgraphs, max_tries)
-            input()
-            if validity:
-                solution = True
-                break
+        vtd_file = r'C:\Users\charl\Box\Internships\Gerry Chain 2\States\Pennsylvania\2021 Data Set 2 Edited\PA_2020_muni.shp'
+        write_to_shapefile(test_p, "assignment", vtd_file, "Testing", 
+            "MUNI_2_" + str(len(muni_assignments)))
 
-        if solution:
+        print("DONE")
+        input()
+
+        if not validity:
+            continue
+
+        validity, proposed_partition = split_counties(vtd_partition, muni_col, 
+            pop_col, muni_assignments, epsilon, border_muni,
+            border_edges, muni_populations, muni_subgraphs, max_tries)
+        input()
+        if validity:
+            solution = True
             break
+
+    if solution:
+        break
 
     # Write to CSV
     # Replace this with write_to_shapefile to write the results using a shapefile.

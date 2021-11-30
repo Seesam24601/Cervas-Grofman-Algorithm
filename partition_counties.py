@@ -24,6 +24,7 @@ from copy import deepcopy
 from partition_functions import (check_population, add_to_assignment,
     check_contiguous)
 import random
+from write_partition import write_to_shapefile
 
 # partition_counties
 # Continue to try to create valid county assignment dictionaries and return 
@@ -70,10 +71,11 @@ def attempt_county_partition(partition, county_col, pop_col, starting_county,
         ideal_population, epsilon, county_populations, pieces)
 
     # Add starting county
-    partition, counties, county_assignments, district, population, pieces = add_county(
+    partition, counties, county_assignments, district, population, pieces, \
+        dof_dictionary = add_county(
         partition, starting_county, county_to_id, counties, county_assignments, 
         district, pop_col, population, ideal_population, epsilon, pieces,
-        district_num, county_populations)
+        district_num, county_populations, {}, 0)
 
     # Continue adding counties until either you create a full plan you the 
     # program gets stuck
@@ -82,21 +84,18 @@ def attempt_county_partition(partition, county_col, pop_col, starting_county,
         # Find the unallocated counties that border the current district
         solution = False
         bordering_counties = get_next_county(partition, counties, 
-            county_to_id, id_to_county, district)
+            county_to_id, id_to_county, district, dof_dictionary)
 
-        # Find the maximum number of counties in the district that a bordering
-        # county borders
-        max_length = max(map(len, bordering_counties.values()))
-
-        # Start at the maximum number and move downwards for how many counties
-        # in the district are bordered
-        for length in range(max_length, -1, -1):
-            if length == 0: 
-                return False, county_assignments
+        # Start at the minimum number of nodes away from the starting node and
+        # move upward
+        for dof in range(50):
+            if dof not in bordering_counties:
+                if dof == 49:
+                    return False, county_assignments 
+                continue
 
             # Shuffle the bordering counties
-            max_length_keys = [key for key, value in bordering_counties.items() 
-                if len(value) == length]
+            max_length_keys = list(bordering_counties[dof])
             random.shuffle(max_length_keys)
 
             # For each bordering county, try to add it to the plan
@@ -106,11 +105,12 @@ def attempt_county_partition(partition, county_col, pop_col, starting_county,
                 # Attempt to add the county
                 proposed_partition, proposed_counties, \
                     proposed_county_assignments, proposed_district, \
-                    proposed_population, proposed_pieces = add_county(partition,
+                    proposed_population, proposed_pieces, \
+                    proposed_dof_dictionary = add_county(partition,
                     county, county_to_id, counties.copy(), 
                     deepcopy(county_assignments), district, pop_col, population, 
                     ideal_population, epsilon, pieces, district_num,
-                    county_populations)
+                    county_populations, dof_dictionary.copy(), dof)
 
                 # Check whether this addition preserves the contiguity of the
                 # plan
@@ -121,6 +121,7 @@ def attempt_county_partition(partition, county_col, pop_col, starting_county,
                     district = proposed_district
                     population = proposed_population
                     pieces = proposed_pieces
+                    dof_dictionary = proposed_dof_dictionary
 
                     solution = True
                     break
@@ -139,7 +140,7 @@ def attempt_county_partition(partition, county_col, pop_col, starting_county,
 # county
 def add_county(partition, county, county_to_id, counties, county_assignments,
     district, pop_col, population, ideal_population, epsilon, pieces, 
-    district_num, county_populations):
+    district_num, county_populations, dof_dictionary, dof_effect):
 
     # Get the county ID of the county
     county_id = county_to_id[county]
@@ -151,7 +152,7 @@ def add_county(partition, county, county_to_id, counties, county_assignments,
         for assignment in county_assignments[county]:
             county_population -= assignment[1]
 
-    # If the current district is at the ideal population, at the entirity of the
+    # If the current district is at the ideal population, put the entirity of the
     # county in a new district
     if check_population(population, ideal_population, epsilon):
         district += 1
@@ -160,6 +161,7 @@ def add_county(partition, county, county_to_id, counties, county_assignments,
         population = county_population
         add_to_assignment(county_assignments, county, district, 
             population)
+        dof_dictionary = {county_id : 0}
 
     # If the population remaining to get the current district to the ideal 
     # population is less than the county population, split the county between
@@ -176,6 +178,7 @@ def add_county(partition, county, county_to_id, counties, county_assignments,
             population = county_population - remaining_population
             add_to_assignment(county_assignments, county, district, 
                 population)
+            dof_dictionary = {county_id : 0}
         else:
             population = ideal_population
 
@@ -186,13 +189,14 @@ def add_county(partition, county, county_to_id, counties, county_assignments,
         population += county_population
         add_to_assignment(county_assignments, county, district, 
             county_population)
+        dof_dictionary[county_id] = dof_effect
     
     # Update the counties list and partition accordingly
     counties.append(county_id)
     partition = partition.flip({county_id : district})
 
     return (partition, counties, county_assignments, district, population,
-        pieces)
+        pieces, dof_dictionary)
 
 # single_county_districts
 # Add as many districts as possible where the district is fully contained within
@@ -266,7 +270,8 @@ def clean_assignment(county_assignments, partition, county_col, pop_col,
 # Returns the name of an unused county that borders the current district. If 
 # unused counties exist that border two or more counties already in the district
 # then one of them will be chosen
-def get_next_county(partition, counties, county_to_id, id_to_county, district):
+def get_next_county(partition, counties, county_to_id, id_to_county, district,
+    dof_dictionary):
 
     # Create empty dictionaries for counties that border the district
     bordering_counties = dict()
@@ -284,17 +289,14 @@ def get_next_county(partition, counties, county_to_id, id_to_county, district):
         # that has yet to been assigned
         if edge_districts in [(1, district), (district, 1)]:
 
-            # If a cut edge exists between a county in the district and an
-            # unused county, add the id of the unused county to the bordering
-            # county dictionary
-            for i in range(0, 2):
-                if edge_counties[i] in counties:
-                    if edge_counties[i - 1] not in bordering_counties:
-                        bordering_counties[edge_counties[i - 1]] = \
-                            [edge_counties[i]]
-                    else:
-                        bordering_counties[edge_counties[i - 1]].append(
-                                edge_counties[i])
+            # Map each bordering county to the number of nodes it is away from 
+            # the first node placed for said district
+            for i in range(2):
+                if edge[i] in counties:
+                    index = dof_dictionary[edge[i]] + 1
+                    if index not in bordering_counties:
+                        bordering_counties[index] = set()
+                    bordering_counties[index].add(edge[i - 1])
                     break
-
+                    
     return bordering_counties

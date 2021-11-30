@@ -61,10 +61,49 @@ def add_to_assignment(county_assignments, county, district, population):
 def check_contiguous(partition, pieces):
 
     # Count the number of connected components
-    current_pieces = 0
-    for part, subgraph in partition.subgraphs.items():
-        current_pieces += number_connected_components(subgraph)
+    current_pieces = get_pieces(partition)
 
     # Make sure the number of connected components is equal to the number of
     # districts
     return current_pieces == pieces
+
+def get_pieces(partition):
+    current_pieces = 0
+    for part, subgraph in partition.subgraphs.items():
+        current_pieces += number_connected_components(subgraph)
+    return current_pieces
+
+# check_borders
+# For a given county and bordering county, check that there exists an edge in 
+# where the node in the county is of the given district
+def check_borders(partition, border_edges, county_col, district, county,
+    border_county, counties):
+
+    # Find the edges between the county and border county from the border_county
+    # dictionary
+    if (county, border_county) in border_edges:
+        edges = border_edges[(county, border_county)]
+    else:
+        edges = border_edges[(border_county, county)]
+
+    # Loop through the edges
+    for edge in edges:
+        edge_districts = (partition.assignment[edge[0]], 
+            partition.assignment[edge[1]])
+        edge_counties = (partition.graph.nodes()[edge[0]][county_col],
+            partition.graph.nodes()[edge[1]][county_col])
+
+        # Check to see if one of the edges meets the criteria
+        for i in range(2):
+            if (edge_counties[i] == county and
+                edge_districts[i] == district):
+
+                # If the border_county has already been partitioned, check that
+                # the edge is the district on both sides
+                if border_county in counties:
+                    if edge_districts[i - 1] == district:
+                        return True
+                else:
+                    return True
+
+    return False
