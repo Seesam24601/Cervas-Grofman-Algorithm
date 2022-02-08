@@ -46,9 +46,6 @@ def split_counties(partition, county_col, pop_col, county_assignments, epsilon,
             nodes = get_county_nodes(county_subgraphs[county], district)
             partition = partition.flip(nodes)
 
-    write_to_csv(partition, "GEOID20", "assignment", "Testing", 
-        "muni_3X")
-
     # Loop through the counties again, this time dealing only with counties
     # that need to be split.
     for count, county in enumerate(county_assignments):

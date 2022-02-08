@@ -13,8 +13,8 @@ approach can be used to correct counties in other states if necessary
 
 from gerrychain import GeographicPartition
 from networkx import number_connected_components, connected_components
-from partition_functions import get_pieces
-from reusable_data import get_subgraph
+from partition_functions_2 import get_pieces
+from reusable_data_2 import get_subgraph
 
 # find_node_by_geoid
 # Return the node in the graph with the given GEOID
