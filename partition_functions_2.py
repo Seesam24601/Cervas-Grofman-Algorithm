@@ -63,7 +63,6 @@ def safe_add(dictionary, key, entry):
 # would require additional contiguity checks
 def check_split_nodes(partitions, level, split_nodes, node, district):
     if level!=2 and node in split_nodes[level]:
-        print("HYPE for TYPEs")
         return check_contiguous_district(partitions[2], district)
     return True
 

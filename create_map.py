@@ -22,7 +22,6 @@ import random
 
 from write_partition import write_to_csv
 
-
 # create_map
 # Crate a single redistricting plan with n-1 county splits by applying the 
 # Cervas-Groffman Algorithm.
@@ -78,99 +77,114 @@ def attempt_map(partitions, county_col, muni_col, pop_col, starting_node,
 
     # Add starting county
     validity, completition, partitions, nodes, district, population, \
-        dof_dictionary, goals, split_nodes, unused_nodes, subgraph_partition = \
-        add_node(partitions, starting_node, district, 0, goals, pop_col, 
-        {}, 0, single_dict, population_deviation, set(), district_num, level,
-        level_conversions, county_col, muni_col, dof_max, allowed_nodes, 
-        subgraph_population, split_nodes, unused_nodes, subgraph_partition,
-        assignment_col)
+        dof_dictionary, goals, plit_nodes, unused_nodes, \
+        subgraph_partition, subgraph_population = add_node(partitions, starting_node, district, 
+        0, goals, pop_col, {}, 0, single_dict, population_deviation, set(), 
+        district_num, level, level_conversions, county_col, muni_col, 
+        dof_max, subgraph_population, allowed_nodes, split_nodes, 
+        unused_nodes, subgraph_partition, assignment_col)
 
-    # Continue adding counties until either you create a full plan you the 
-    # program gets stuck
-    count = 1
-    while True:
+    if not validity:
+        print("start failed")
+        return False, False, None, None, None, None
 
-        # Find the unallocated counties that border the current district
-        solution = False
-        bordering_nodes = next_node(partitions[level], nodes, district, 
-            dof_dictionary, allowed_nodes)
+    validity, completition, partitions, goals, district, population, subgraph_population = \
+    attempt_map_helper(partitions, county_col, muni_col, pop_col, 
+        population_deviation, district_num, goals, dof_max, district, 
+        single_dict, level, level_conversions, allowed_nodes, 
+        subgraph_population, split_nodes, assignment_col, nodes,    
+        dof_dictionary, subgraph_partition, unused_nodes, population,
+        starting_node)
 
-        # Start at the minimum number of nodes away from the starting node and
-        # move upward
-        for dof in range(dof_max + 1):
-            if dof not in bordering_nodes:
+    return validity, completition, partitions, goals, district, population
 
-                # If we have tried every possible node, return false
-                if dof == dof_max:
-                    print("GEORGE")
-                    return False, False, partitions, goals, district, population
-                continue
+def attempt_map_helper(partitions, county_col, muni_col, pop_col, 
+    population_deviation, district_num, goals, dof_max, district, single_dict, 
+    level, level_conversions, allowed_nodes, subgraph_population, split_nodes,
+    assignment_col, nodes, dof_dictionary, subgraph_partition, unused_nodes,
+    population, previous_node):
 
-            # Shuffle the bordering counties
-            max_length_keys = list(bordering_nodes[dof])
-            random.shuffle(max_length_keys)
+    # Check whether or not the unallocated nodes are contiguous on the whole
+    # map
+    contiguity_check = check_contiguous(partitions[level])
 
-            # For each bordering county, try to add it to the plan
-            for node in max_length_keys:
-                
-                # Attempt to add the county
-                validity, completion, proposed_partitions, proposed_nodes, \
-                    proposed_district, proposed_population, \
-                    proposed_dof_dictionary, proposed_goals, \
-                    proposed_split_nodes, proposed_unused_nodes, \
-                    proposed_subgraph_partition = add_node(partitions.copy(), 
-                    node, district, population, goals, pop_col, 
-                    dof_dictionary.copy(), dof, single_dict, 
-                    population_deviation, nodes.copy(), district_num, level,
-                    level_conversions, county_col, muni_col, dof_max, 
-                    subgraph_population, allowed_nodes, split_nodes.copy(), 
-                    unused_nodes.copy(), subgraph_partition, assignment_col)
+    # Check whether or not the unallocated nodes are contiguous in the subgraph
+    subgraph_check = check_subgraph(subgraph_partition, level)
 
-                # If this is a lower level (muni or VTD) and the rest of the
-                # superset has been filled in, then declare the subgraph
-                # complete
-                if completion:
-                    partitions = proposed_partitions
-                    nodes = proposed_nodes
-                    district = proposed_district
-                    population = proposed_population
-                    dof_dictionary = proposed_dof_dictionary
-                    goals = proposed_goals
-                    split_nodes = proposed_split_nodes
-                    unused_nodes = proposed_unused_nodes
-                    subgraph_partition = proposed_subgraph_partition
+    # Check whether or not the unallocated nodes are contiguous at other levels,
+    # if applicable
+    split_check = check_split_nodes(partitions, level, split_nodes, 
+        previous_node, district)
 
-                    return (True, False, partitions, goals, proposed_district, 
-                        population)
+    # False Case: If any of the above checks fail, return False
+    if not contiguity_check or not subgraph_check or not split_check:
+        return False, False, None, None, None, None, None
 
-                # Check whether this addition preserves the contiguity of the
-                # plan
-                if (validity and check_contiguous(proposed_partitions[level])
-                    and check_subgraph(proposed_subgraph_partition, level)
-                    and check_split_nodes(proposed_partitions, level, 
-                    proposed_split_nodes, node, proposed_district)):
-                    partitions = proposed_partitions
-                    nodes = proposed_nodes
-                    district = proposed_district
-                    population = proposed_population
-                    dof_dictionary = proposed_dof_dictionary
-                    goals = proposed_goals
-                    split_nodes = proposed_split_nodes
-                    unused_nodes = proposed_unused_nodes
-                    subgraph_partition = proposed_subgraph_partition
+    # True Case: If a valid plan is found, return it
+    if district == district_num and check_population(population,
+        goals[district_num - 1], population_deviation):
+        return True, True, partitions, goals, district, population, subgraph_population
 
-                    solution = True
-                    count += 1
-                    break
+    # Find the unallocated counties that border the current district
+    bordering_nodes = next_node(partitions[level], nodes, district, 
+        dof_dictionary, allowed_nodes)
 
-            if solution:
-                break
+    # Start at the minimum number of nodes away from the starting node and
+    # move upward
+    for dof in range(dof_max + 1):
 
-        # If a valid plan is found, return it
-        if district == district_num and check_population(population,
-            goals[district_num - 1], population_deviation):
-            return True, True, partitions, goals, district, population
+        if dof not in bordering_nodes:
 
+            # If we have tried every possible node, return false
+            if dof == dof_max:
+                return False, False, partitions, goals, district, population, subgraph_population
+            continue
+
+        # Shuffle the bordering counties
+        max_length_keys = list(bordering_nodes[dof])
+        random.shuffle(max_length_keys)
+
+        # For each bordering county, try to add it to the plan
+        for node in max_length_keys:
+            
+            # Attempt to add the node
+            validity, completion, proposed_partitions, proposed_nodes, \
+                proposed_district, proposed_population, \
+                proposed_dof_dictionary, proposed_goals, \
+                proposed_split_nodes, proposed_unused_nodes, \
+                proposed_subgraph_partition, proposed_subgraph_population = add_node(partitions.copy(), 
+                node, district, population, goals, pop_col, 
+                dof_dictionary.copy(), dof, single_dict, 
+                population_deviation, nodes.copy(), district_num, level,
+                level_conversions, county_col, muni_col, dof_max, 
+                subgraph_population, allowed_nodes, split_nodes.copy(), 
+                unused_nodes.copy(), subgraph_partition, assignment_col)
+
+            # If this is a lower level (muni or VTD) and the rest of the
+            # superset has been filled in, then declare the subgraph complete
+            if completion:
+                return (True, True, proposed_partitions, proposed_goals, 
+                    proposed_district, proposed_population, proposed_subgraph_population)
+
+            # If the resulting map is valid, make the recursive call
+            if validity:
+
+                new_validity, completion, new_partitions, new_goals, \
+                    new_district, new_population, new_subgraph_population = attempt_map_helper(
+                    proposed_partitions, county_col, muni_col, pop_col, 
+                    population_deviation, district_num, proposed_goals, dof_max, 
+                    proposed_district, single_dict, level, level_conversions, 
+                    allowed_nodes, proposed_subgraph_population, proposed_split_nodes,
+                    assignment_col, proposed_nodes, proposed_dof_dictionary, 
+                    proposed_subgraph_partition, proposed_unused_nodes,
+                    proposed_population, node)
+
+                # If the recursive call is a success, return the plan.
+                # Otherwise, continue looping to the next option
+                if new_validity:
+                    return (True, completion, new_partitions, new_goals, 
+                        new_district, new_population, new_subgraph_population)
+        
 # single_county_districts
 # Add as many districts as possible where the district is fully contained within
 # a county

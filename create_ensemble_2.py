@@ -11,6 +11,7 @@ This file creates an ensemble of redistricting plans with n-1 county splits by
 applying the Cervas-Groffman Algorithm.
 '''
 
+from create_clusters import create_clusters
 from create_map import create_map
 from discontiguous_counties import (correct_PA, check_contiguity, 
     muni_over_county, check_donuts)
@@ -23,6 +24,13 @@ from reusable_data_2 import (get_ideal_population, get_starting_node,
 import time
 
 from write_partition import write_to_csv, write_to_shapefile
+
+# Update the recursion limit
+# By default, Python has a recursion limit of around 1000. However, when 
+# flipping nodes at the VTD level it is easy to exceed this because updating
+# the cut edges and population are also achieved recursively
+import sys
+sys.setrecursionlimit(5000)
 
 # Input Values
 exec(open("input_template_2.py").read())
@@ -59,8 +67,13 @@ counties = set(county_graph.nodes())
 # Ideal Population
 ideal_population = get_ideal_population(county_partition, district_num)
 
+print(ideal_population)
+
 # Population Deviation
 population_deviation = ideal_population * epsilon
+
+print(population_deviation)
+print()
 
 # Starting Node
 starting_node = get_starting_node(county_graph, county_col, starting_county)
@@ -71,9 +84,9 @@ for i in range(runs):
     partition = create_map(county_partition, muni_partition, vtd_partition,
         county_col, muni_col, pop_col, starting_node, population_deviation, 
         district_num, ideal_population, dof_max, level_conversions, counties,
-        assignment_col)
+        assignment_col) 
 
-    write_to_csv(partition, "GEOID20", "assignment", "Testing", "TEST36")
+    write_to_csv(partition, "GEOID20", "assignment", "Testing", "TEST48")
 
     t1 = time.time()
 

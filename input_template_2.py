@@ -66,7 +66,7 @@ starting_county = '049'
 # Epsilon
 # The percentage any given district is allowed to be different from the ideal
 # population. Note that this does not apply to the final district.
-epsilon = 0.1
+epsilon = 0.05
 
 # Number of Districtsx`
 district_num = 10
