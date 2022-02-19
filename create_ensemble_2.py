@@ -78,6 +78,12 @@ print()
 # Starting Node
 starting_node = get_starting_node(county_graph, county_col, starting_county)
 
+#create_clusters(county_partition, pop_col, starting_node, 
+#    population_deviation, district_num, ideal_population, dof_max, vtd_partition)
+
+#print("Done")
+#input()
+
 t0_all = t0 = time.time()
 for i in range(runs):
 

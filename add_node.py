@@ -38,7 +38,7 @@ def add_node(partitions, node, district, population, goals, pop_col,
     # node in a new district
     if check_population(population, ideal_population, population_deviation):
         district += 1
-        dof_dictionary = {node : 0}
+        #dof_dictionary = {node : 0}
         nodes = set()
 
         print(district)
@@ -264,7 +264,7 @@ def step_down(partitions, county_col, muni_col, pop_col, population_deviation,
 
         if district != old_district:
             nodes = {node}
-            dof_dictionary = {node : 0}
+            #dof_dictionary = {node : 0}
 
         else:
             nodes.add(node)

@@ -48,16 +48,16 @@ def create_map(county_partition, muni_partition, vtd_partition, county_col,
     # Create initial population goal list
     goals = [ideal_population for i in range(district_num)]
 
-    # Continue until a valid plan is found
-    while True:
-        validity, completition, partitions, goals, districts, \
-            remaining_population = attempt_map(start_partitions, county_col, 
-            muni_col, pop_col, starting_node, population_deviation, 
-            district_num, goals, dof_max, district, single_dict, 0, 
-            level_conversions, counties, 0, split_nodes, assignment_col)
+    validity, completition, partitions, goals, districts, \
+        remaining_population = attempt_map(start_partitions, county_col, 
+        muni_col, pop_col, starting_node, population_deviation, 
+        district_num, goals, dof_max, district, single_dict, 0, 
+        level_conversions, counties, 0, split_nodes, assignment_col)
 
-        if validity:
-            return partitions[2]
+    if validity:
+        return partitions[2]
+    else:
+        print("Fatal Error: Line 62")
 
 # attempt_map
 # Try to make a valid map if one exists.

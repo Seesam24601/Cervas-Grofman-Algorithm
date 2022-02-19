@@ -19,13 +19,13 @@ new_graphs = False
 graph_dump = "Test.dump"
 
 # SHP file with vtds
-vtd_file  = r'C:\Users\charl\Box\Internships\Gerry Chain 2\States\Pennsylvania\2021 Data Set 2 Philly Removed\PA_2020_vtds.shp'
+vtd_file  = r'C:\Users\charl\Box\Internships\Gerry Chain 2\States\Pennsylvania\2021 Data Set 2 Edited\PA_2020_vtds.shp'
 
 # SHP file with counties
-county_file = r'C:\Users\charl\Box\Internships\Gerry Chain 2\States\Pennsylvania\2021 Data Set 2 Philly Removed\PA_2020_counties.shp'
+county_file = r'C:\Users\charl\Box\Internships\Gerry Chain 2\States\Pennsylvania\2021 Data Set 2 Edited\PA_2020_counties.shp'
 
 # SHP file with municipalities
-muni_file = r'C:\Users\charl\Box\Internships\Gerry Chain 2\States\Pennsylvania\2021 Data Set 2 Philly Removed\PA_2020_muni.shp'
+muni_file = r'C:\Users\charl\Box\Internships\Gerry Chain 2\States\Pennsylvania\2021 Data Set 2 Edited\PA_2020_muni.shp'
 
 # Destination folder for ensemble.  
 # Must be placed within the Ensembles folder
@@ -70,11 +70,6 @@ epsilon = 0.05
 
 # Number of Districtsx`
 district_num = 10
-
-# Number of Tries
-# How many times the program will try to split a county before it assumes that
-# no valid split is possible
-max_tries = 20
 
 # Number of plans
 runs = 1
